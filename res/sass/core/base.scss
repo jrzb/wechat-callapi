@@ -1,0 +1,29 @@
+@import "global";
+body {
+	font-family: 'Merriweather Sans', sans-serif;
+}
+header { 
+	padding:5px 15px;
+	border-bottom:1px solid #d9d9d9;
+	background-color:#f0f0f0;
+	@include text-shadow(rgba(black, 0.8) 1px 1px 1px);
+	.logo {
+		display:inline-block;
+		margin-right: 10px;
+		vertical-align: middle;
+	}
+	h1 {
+		display:inline-block;
+		vertical-align: middle;
+		font-size:22px;
+		line-height:22px;
+		font-weight:bold;
+	}
+}
+.content {
+	min-height:580px;
+	margin:0 15px;
+}
+footer {
+	padding:0 15px;
+}

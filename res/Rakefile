@@ -1,0 +1,17 @@
+# Rake file
+require 'rake'
+require 'rake/clean'
+
+task :default => [:compass]
+#task :all => [:js,:compass]
+
+# Build css
+task :compass  do
+	sh "compass compile"
+	sh "compass watch"
+end
+
+# Compressed js
+task :js do
+    sh "node r.js -o r_build.js"
+end
