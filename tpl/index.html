@@ -10,12 +10,39 @@
 			<h1><img class="logo" src="/favicon.ico" alt="wechat"/>Wechat collback api.</h1>
 		</header>
 		<div class="content">
-		{% if not talks %}
-		<div>Empty!</div>
-		{% endif %}
-		{% for talk in talks %}
-		<li>{{talk.xml}}</li>
-		{% endfor %}
+			{% if not talks %}
+			<p>Empty!</p>
+			{% endif %}
+			<table class="list">
+				<thead>
+					<tr>
+						<th>MsgId</th>
+						<th>FromUserName</th>
+						<th>MsgType</th>
+						<th>Content</th>
+						<th>CreateTime</th>
+					</tr>
+				</thead>
+				<tbody>
+				{% for talk in talks %}
+				<tr>
+					<td>{{talk.MsgId}}</td>
+					<td>{{talk.FromUserName}}</td>
+					<td>{{talk.MsgType}}</td>
+					{% if talk.MsgType == 'text' %}
+					<td>{{talk.Content}}</td>
+					{% endif %}
+					{% if talk.MsgType == 'image' %}
+					<td><a href="{{talk.PicUrl}}" target="_blank">{{talk.PicUrl}}</a></td>
+					{% endif %}
+					<td>{{talk.CreateTime}}</td>
+				</tr>
+				{% endfor %}
+				</tbody>
+			</table>
+			<blockquote class="takecare">
+				Only list `text` , `image` message.
+			</blockquote>
 		</div>
 		<footer>
 			<div><img class="poweredbay" src="/images/appengine-noborder-120x30.gif" alt="App Engine" /></div>
