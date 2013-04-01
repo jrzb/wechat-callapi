@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import jinja2
 import os
 import hashlib
 import time 
@@ -9,12 +8,7 @@ from xml.dom import minidom
 
 from google.appengine.ext import webapp
 from google.appengine.ext import db
-#from google.appengine.ext.webapp import template
-
-
-
-jinja_environment = jinja2.Environment(
-    loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
+from google.appengine.ext.webapp import template
 
 # talk class
 class Talk(db.Model):
@@ -39,32 +33,49 @@ class Talk(db.Model):
 	Description = db.StringProperty()
 	Url = db.StringProperty()
 	
+	def getXmlOneNodeValue(self,xmlNode,name):
+		nodes = xmlNode.getElementsByTagName(name) if xmlNode else []
+		return nodes[0].childNodes[0].nodeValue if nodes[0] and nodes[0].childNodes else ''
+		#logging.info(val)
+		#return val
 	
 	def parseXml(self,xml):
-		dom = minidom.parseString(xml);
-		self.ToUserName = dom.getElementsByTagName('ToUserName')[0].childNodes[0].nodeValue;
-		self.FromUserName = dom.getElementsByTagName('FromUserName')[0].childNodes[0].nodeValue;
-		self.CreateTime = dom.getElementsByTagName('CreateTime')[0].childNodes[0].nodeValue;
-		self.MsgType = dom.getElementsByTagName('MsgType')[0].childNodes[0].nodeValue;
+		dom = minidom.parseString(xml)
+		self.ToUserName = self.getXmlOneNodeValue(dom,'ToUserName')
+		self.FromUserName = self.getXmlOneNodeValue(dom,'FromUserName')
+		self.CreateTime = self.getXmlOneNodeValue(dom,'CreateTime')
+		self.MsgType = self.getXmlOneNodeValue(dom,'MsgType')
 		if self.MsgType == 'text':
-			self.Content = dom.getElementsByTagName('Content')[0].childNodes[0].nodeValue;
+			self.Content = self.getXmlOneNodeValue(dom,'Content')
 		elif self.MsgType == 'image':
-			self.PicUrl = dom.getElementsByTagName('PicUrl')[0].childNodes[0].nodeValue;
+			self.PicUrl = self.getXmlOneNodeValue(dom,'PicUrl')
 		elif self.MsgType == 'location':
-			self.Location_X = dom.getElementsByTagName('Location_X')[0].childNodes[0].nodeValue;
-			self.Location_Y = dom.getElementsByTagName('Location_Y')[0].childNodes[0].nodeValue;
-			self.Scale = dom.getElementsByTagName('Scale')[0].childNodes[0].nodeValue;
-			self.Label = dom.getElementsByTagName('Label')[0].childNodes[0].nodeValue;
+			self.Location_X = float(self.getXmlOneNodeValue(dom,'Location_X'))
+			self.Location_Y = float(self.getXmlOneNodeValue(dom,'Location_Y'))
+			self.Scale = long(self.getXmlOneNodeValue(dom,'Scale'))
+			self.Label = self.getXmlOneNodeValue(dom,'Label')
 		elif self.MsgType == 'event':
-			self.EventKey = long(dom.getElementsByTagName('EventKey')[0].childNodes[0].nodeValue);
-			self.Event = dom.getElementsByTagName('Event')[0].childNodes[0].nodeValue;
+			self.EventKey = long(self.getXmlOneNodeValue(dom,'EventKey'))
+			self.Event = self.getXmlOneNodeValue(dom,'Event')
 		elif self.MsgType == 'link':
-			self.Title = long(dom.getElementsByTagName('Title')[0].childNodes[0].nodeValue);
-			self.Description = dom.getElementsByTagName('Description')[0].childNodes[0].nodeValue;
-			self.Url = dom.getElementsByTagName('Url')[0].childNodes[0].nodeValue;
+			self.Title = self.getXmlOneNodeValue(dom,'Title')
+			self.Description = self.getXmlOneNodeValue(dom,'Description')
+			self.Url = self.getXmlOneNodeValue(dom,'Url')
 			
 		if self.MsgType != 'event':
-			self.MsgId = long(dom.getElementsByTagName('MsgId')[0].childNodes[0].nodeValue);	
+			self.MsgId = long(self.getXmlOneNodeValue(dom,'MsgId'))
+	
+	def testParseXml(self):
+		xml = ( "<xml><ToUserName><![CDATA[gh_f688fa7c5f0d]]></ToUserName>"
+				"<FromUserName><![CDATA[ozXqJjuFc91lDnGpK8Ys7imuftik]]></FromUserName>"
+				"<CreateTime>1364808655</CreateTime>"
+				"<MsgType><![CDATA[text]]></MsgType>"
+				"<Content><![CDATA[]]></Content>"
+				"<MsgId>5861808538522746968</MsgId>"
+				"</xml>")
+		self.parseXml(xml)
+		logging.info(xml)
+		logging.info(self.Content)
 
 # reply class
 class Reply(db.Model):
@@ -88,6 +99,8 @@ class Reply(db.Model):
 class MainPage(webapp.RequestHandler):
 	def get(self):
 		
+		#talk = Talk()
+		#talk.testParseXml()
 		
 		echostr = self.request.get('echostr')
 		self.response.headers['Content-Type'] = 'text/html'
@@ -100,24 +113,29 @@ class MainPage(webapp.RequestHandler):
 			template_values = {
 				'talks':talks
 			}
-			template = jinja_environment.get_template('tpl/index.html')
+
 			self.response.write(
-				template.render(template_values))
+				template.render('tpl/index.html',template_values))
     
 	def checkSignature(self):
 		token = 'wechat' # your token
 		signature = self.request.get('signature')
 		timestamp = self.request.get('timestamp')
 		nonce = self.request.get('nonce')
-		tempStr =nonce + timestamp + token
+		tmpArr = [token, timestamp, nonce];
+		tmpArr.sort()
+		tempStr = "".join(tmpArr)
 		tempStr = hashlib.sha1(tempStr).hexdigest()
+		#logging.info(signature);
+		#logging.info(tempStr);
 		return signature == tempStr
 		
 	def post(self):
 		if self.checkSignature():
-			postStr  = self.request.body # xml str			
+			postStr  = self.request.body # xml str	
+			#logging.info(postStr)
 			if (not postStr.isspace()) and (not postStr == ''): #no empty
-				logging.debug(postStr)
+				#logging.debug(postStr)
 				talk = Talk()
 				talk.parseXml(postStr)
 				talk.put()
