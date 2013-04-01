@@ -26,15 +26,38 @@
 				<tbody>
 				{% for talk in talks %}
 				<tr>
-					<td>{{talk.MsgId}}</td>
+					<td>
+					{% if talk.MsgType == 'event' %}
+					{{talk.EventKey}}
+					{% else %}
+					{{talk.MsgId}}
+					{% endif %}
+					</td>
+					
 					<td>{{talk.FromUserName}}</td>
+					
 					<td>{{talk.MsgType}}</td>
+					
 					{% if talk.MsgType == 'text' %}
 					<td>{{talk.Content}}</td>
 					{% endif %}
+					
 					{% if talk.MsgType == 'image' %}
 					<td><a href="{{talk.PicUrl}}" target="_blank">{{talk.PicUrl}}</a></td>
 					{% endif %}
+					
+					{% if talk.MsgType == 'event' %}
+					<td>{{talk.Event}}</td>
+					{% endif %}
+					
+					{% if talk.MsgType == 'link' %}
+					<td><a href="{{talk.Url}}" title="{{talk.Description}}" target="_blank">{{talk.Title}}</a></td>
+					{% endif %}
+					
+					{% if talk.MsgType == 'location' %}
+					<td>({{talk.Location_X}},{{talk.Location_Y}})[{{talk.Scale}},{{talk.Label}}]</td>
+					{% endif %}
+					
 					<td>{{talk.CreateTime}}</td>
 				</tr>
 				{% endfor %}

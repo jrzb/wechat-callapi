@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+import jinja2
+import os
 import hashlib
 import time 
 import logging
@@ -7,7 +9,12 @@ from xml.dom import minidom
 
 from google.appengine.ext import webapp
 from google.appengine.ext import db
-from google.appengine.ext.webapp import template
+#from google.appengine.ext.webapp import template
+
+
+
+jinja_environment = jinja2.Environment(
+    loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
 
 # talk class
 class Talk(db.Model):
@@ -16,8 +23,23 @@ class Talk(db.Model):
 	CreateTime = db.StringProperty()
 	MsgType = db.StringProperty()
 	Content = db.TextProperty()
-	PicUrl = db.TextProperty()
 	MsgId = db.IntegerProperty()
+	
+	PicUrl = db.TextProperty()
+	
+	Event = db.StringProperty()
+	EventKey = db.StringProperty()
+	
+	Location_X = db.FloatProperty()
+	Location_Y = db.FloatProperty()
+	Scale = db.IntegerProperty()
+	Label = db.StringProperty()
+	
+	Title = db.StringProperty()
+	Description = db.StringProperty()
+	Url = db.StringProperty()
+	
+	
 	def parseXml(self,xml):
 		dom = minidom.parseString(xml);
 		self.ToUserName = dom.getElementsByTagName('ToUserName')[0].childNodes[0].nodeValue;
@@ -29,13 +51,21 @@ class Talk(db.Model):
 		elif self.MsgType == 'image':
 			self.PicUrl = dom.getElementsByTagName('PicUrl')[0].childNodes[0].nodeValue;
 		elif self.MsgType == 'location':
-			logging.info('location msg')
+			self.Location_X = dom.getElementsByTagName('Location_X')[0].childNodes[0].nodeValue;
+			self.Location_Y = dom.getElementsByTagName('Location_Y')[0].childNodes[0].nodeValue;
+			self.Scale = dom.getElementsByTagName('Scale')[0].childNodes[0].nodeValue;
+			self.Label = dom.getElementsByTagName('Label')[0].childNodes[0].nodeValue;
 		elif self.MsgType == 'event':
-			logging.info('event msg')
+			self.EventKey = long(dom.getElementsByTagName('EventKey')[0].childNodes[0].nodeValue);
+			self.Event = dom.getElementsByTagName('Event')[0].childNodes[0].nodeValue;
 		elif self.MsgType == 'link':
-			logging.info('link msg')
-		
-		self.MsgId = long(dom.getElementsByTagName('MsgId')[0].childNodes[0].nodeValue);	
+			self.Title = long(dom.getElementsByTagName('Title')[0].childNodes[0].nodeValue);
+			self.Description = dom.getElementsByTagName('Description')[0].childNodes[0].nodeValue;
+			self.Url = dom.getElementsByTagName('Url')[0].childNodes[0].nodeValue;
+			
+		if self.MsgType != 'event':
+			self.MsgId = long(dom.getElementsByTagName('MsgId')[0].childNodes[0].nodeValue);	
+
 # reply class
 class Reply(db.Model):
 	ToUserName = db.StringProperty()
@@ -70,8 +100,9 @@ class MainPage(webapp.RequestHandler):
 			template_values = {
 				'talks':talks
 			}
+			template = jinja_environment.get_template('tpl/index.html')
 			self.response.write(
-				template.render('tpl/index.html',template_values))
+				template.render(template_values))
     
 	def checkSignature(self):
 		token = 'wechat' # your token
